@@ -15,6 +15,9 @@ export function Footer() {
           </div>
           
           <div className="flex flex-wrap justify-center gap-6 text-sm">
+            <Link href="/about" className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-about">
+              About Us
+            </Link>
             <Link href="/terms" className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-terms">
               Terms of Service
             </Link>

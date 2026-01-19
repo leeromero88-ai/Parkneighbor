@@ -40,6 +40,9 @@ export function Navbar() {
           <Link href="/browse" className={`text-sm font-medium transition-colors hover:text-primary ${location === '/browse' ? 'text-primary' : 'text-muted-foreground'}`}>
             Find Parking
           </Link>
+          <Link href="/about" className={`text-sm font-medium transition-colors hover:text-primary ${location === '/about' ? 'text-primary' : 'text-muted-foreground'}`} data-testid="link-about-nav">
+            About
+          </Link>
           {isAuthenticated && (
             <Link href="/bookings" className={`text-sm font-medium transition-colors hover:text-primary ${location === '/bookings' ? 'text-primary' : 'text-muted-foreground'}`}>
               My Bookings
