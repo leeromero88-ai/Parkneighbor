@@ -30,16 +30,20 @@ shared/                  # Shared types and schemas
 - 2026-01-19: Initial build with Replit Auth
 - 2026-01-19: Renamed app to "ParkNeighbor"
 - 2026-01-19: Added custom logo
+- 2026-01-19: Integrated Stripe payments with $4.00 transaction fee
 
 ## User Preferences
 - App name: ParkNeighbor
 - Target location: Hard Rock Stadium area
-
-## Pending Features
-- **Stripe Integration**: User wants to charge a $4.00 fee per transaction to drivers. Stripe connector was not set up. When ready to implement, use `search_integrations` to find Stripe and complete the authorization flow.
+- Transaction fee: $4.00 per booking (charged to drivers)
 
 ## Technical Notes
 - Uses Replit Auth for user authentication
 - PostgreSQL database for data storage
 - Price stored in cents (integer)
 - All dates stored as timestamps
+- Stripe integration for payments:
+  - Uses stripe-replit-sync for webhook handling
+  - $4.00 (400 cents) transaction fee added to each booking
+  - Checkout session includes parking price + service fee
+  - Bookings created after successful payment verification

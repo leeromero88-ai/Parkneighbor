@@ -8,6 +8,7 @@ import BrowseListings from "@/pages/BrowseListings";
 import ListingDetails from "@/pages/ListingDetails";
 import CreateListing from "@/pages/CreateListing";
 import MyBookings from "@/pages/MyBookings";
+import BookingSuccess from "@/pages/BookingSuccess";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -21,6 +22,7 @@ function Router() {
           <Route path="/listing/:id" component={ListingDetails} />
           <Route path="/create-listing" component={CreateListing} />
           <Route path="/bookings" component={MyBookings} />
+          <Route path="/booking/success" component={BookingSuccess} />
           <Route component={NotFound} />
         </Switch>
       </main>

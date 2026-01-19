@@ -1,8 +1,8 @@
 import { useRoute } from "wouter";
 import { useListing } from "@/hooks/use-listings";
-import { useCreateBooking } from "@/hooks/use-bookings";
+import { useCheckout } from "@/hooks/use-bookings";
 import { useAuth } from "@/hooks/use-auth";
-import { Loader2, MapPin, Calendar, Check, Shield, User } from "lucide-react";
+import { Loader2, MapPin, Check, Shield, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
@@ -106,9 +106,18 @@ export default function ListingDetails() {
                       <span className="font-medium">{format(new Date(listing.availableTo), "h:mm a")}</span>
                     </div>
                     <div className="h-px bg-border my-4" />
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Parking</span>
+                      <span className="font-medium">${(listing.price / 100).toFixed(2)}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Service fee</span>
+                      <span className="font-medium">$4.00</span>
+                    </div>
+                    <div className="h-px bg-border my-4" />
                     <div className="flex items-center justify-between font-bold text-lg">
                       <span>Total</span>
-                      <span>${(listing.price / 100).toFixed(2)}</span>
+                      <span>${((listing.price / 100) + 4).toFixed(2)}</span>
                     </div>
                   </div>
 
@@ -138,23 +147,26 @@ export default function ListingDetails() {
 }
 
 function BookingDialog({ listing }: { listing: any }) {
-  const { mutate, isPending } = useCreateBooking();
+  const { mutate, isPending } = useCheckout();
   const [open, setOpen] = useState(false);
 
   const handleBook = () => {
     mutate({
       listingId: listing.id,
-      startTime: listing.availableFrom, // Assuming full slot booking for MVP
-      endTime: listing.availableTo,
-    }, {
-      onSuccess: () => setOpen(false)
+      startTime: new Date(listing.availableFrom).toISOString(),
+      endTime: new Date(listing.availableTo).toISOString(),
     });
   };
+
+  const totalPrice = (listing.price / 100) + 4;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="w-full text-lg h-12 shadow-lg shadow-primary/20 bg-gradient-to-r from-primary to-primary/90">
+        <Button 
+          className="w-full text-lg h-12 shadow-lg shadow-primary/20 bg-gradient-to-r from-primary to-primary/90"
+          data-testid="button-reserve-spot"
+        >
           Reserve Spot
         </Button>
       </DialogTrigger>
@@ -176,16 +188,24 @@ function BookingDialog({ listing }: { listing: any }) {
               {format(new Date(listing.availableFrom), "h:mm a")} - {format(new Date(listing.availableTo), "h:mm a")}
             </span>
           </div>
+          <div className="flex justify-between items-center pt-2">
+            <span className="text-sm text-muted-foreground">Parking</span>
+            <span className="font-medium">${(listing.price / 100).toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-muted-foreground">Service fee</span>
+            <span className="font-medium">$4.00</span>
+          </div>
           <div className="flex justify-between items-center border-t pt-4">
-            <span className="font-bold">Total Price</span>
-            <span className="font-bold text-xl text-primary">${(listing.price / 100).toFixed(2)}</span>
+            <span className="font-bold">Total</span>
+            <span className="font-bold text-xl text-primary">${totalPrice.toFixed(2)}</span>
           </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-          <Button onClick={handleBook} disabled={isPending}>
+          <Button onClick={handleBook} disabled={isPending} data-testid="button-confirm-payment">
             {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Confirm Payment
+            Proceed to Payment
           </Button>
         </DialogFooter>
       </DialogContent>

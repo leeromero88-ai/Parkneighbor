@@ -11,11 +11,11 @@ export interface IStorage {
   // Listings
   getListings(): Promise<Listing[]>;
   getListing(id: number): Promise<Listing | undefined>;
-  createListing(listing: InsertListing): Promise<Listing>;
+  createListing(listing: InsertListing & { userId: string }): Promise<Listing>;
   
   // Bookings
   getBookingsByUser(userId: string): Promise<BookingWithListing[]>;
-  createBooking(booking: InsertBooking & { stripeSessionId?: string }): Promise<Booking>;
+  createBooking(booking: InsertBooking & { userId: string; stripeSessionId?: string | null }): Promise<Booking>;
   getBookingBySessionId(sessionId: string): Promise<Booking | undefined>;
 }
 
@@ -29,7 +29,7 @@ export class DatabaseStorage implements IStorage {
     return listing;
   }
 
-  async createListing(insertListing: InsertListing): Promise<Listing> {
+  async createListing(insertListing: InsertListing & { userId: string }): Promise<Listing> {
     const [listing] = await db.insert(listings).values(insertListing).returning();
     return listing;
   }
@@ -50,17 +50,21 @@ export class DatabaseStorage implements IStorage {
     }));
   }
 
-  async createBooking(insertBooking: InsertBooking & { stripeSessionId?: string }): Promise<Booking> {
+  async createBooking(insertBooking: InsertBooking & { userId: string; stripeSessionId?: string | null }): Promise<Booking> {
     const listing = await this.getListing(insertBooking.listingId);
     if (!listing) throw new Error("Listing not found");
 
-    const totalPrice = listing.price;
+    const TRANSACTION_FEE = 400;
+    const totalPrice = listing.price + TRANSACTION_FEE;
 
     const [booking] = await db.insert(bookings).values({
-      ...insertBooking,
+      listingId: insertBooking.listingId,
+      userId: insertBooking.userId,
+      startTime: insertBooking.startTime,
+      endTime: insertBooking.endTime,
       status: "confirmed",
       totalPrice,
-      stripeSessionId: insertBooking.stripeSessionId,
+      stripeSessionId: insertBooking.stripeSessionId || null,
     }).returning();
     
     return booking;

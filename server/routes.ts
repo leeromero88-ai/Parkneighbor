@@ -37,14 +37,9 @@ export async function registerRoutes(
     }
     
     try {
-      // Force the userId to match the authenticated user
-      const listingData = {
-        ...req.body,
-        userId: (req.user as any).claims.sub
-      };
-      
-      const input = insertListingSchema.parse(listingData);
-      const listing = await storage.createListing(input);
+      const userId = (req.user as any).claims.sub;
+      const input = insertListingSchema.parse(req.body);
+      const listing = await storage.createListing({ ...input, userId });
       res.status(201).json(listing);
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -75,13 +70,9 @@ export async function registerRoutes(
     }
 
     try {
-      const bookingData = {
-        ...req.body,
-        userId: (req.user as any).claims.sub
-      };
-      
-      const input = insertBookingSchema.parse(bookingData);
-      const booking = await storage.createBooking(input);
+      const userId = (req.user as any).claims.sub;
+      const input = insertBookingSchema.parse(req.body);
+      const booking = await storage.createBooking({ ...input, userId });
       res.status(201).json(booking);
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -193,8 +184,16 @@ export async function registerRoutes(
       const session = await stripe.checkout.sessions.retrieve(session_id);
 
       if (session.payment_status === 'paid') {
-        const metadata = session.metadata!;
+        const metadata = session.metadata;
         const userId = (req.user as any).claims.sub;
+        
+        if (!metadata || !metadata.listingId || !metadata.startTime || !metadata.endTime) {
+          return res.status(400).json({ message: "Invalid session metadata" });
+        }
+
+        if (metadata.userId !== userId) {
+          return res.status(403).json({ message: "Session does not belong to this user" });
+        }
         
         const existingBooking = await storage.getBookingBySessionId(session_id);
         if (existingBooking) {

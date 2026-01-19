@@ -18,6 +18,71 @@ export function useBookings() {
   });
 }
 
+// Create checkout session for payment
+export function useCheckout() {
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (data: { listingId: number; startTime: string; endTime: string }) => {
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+        credentials: 'include',
+      });
+
+      if (!res.ok) {
+        const json = await res.json();
+        throw new Error(json.message || 'Failed to create checkout');
+      }
+
+      return res.json();
+    },
+    onSuccess: (data) => {
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    },
+    onError: (error) => {
+      toast({
+        title: 'Checkout Failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+}
+
+// Verify checkout session and create booking
+export function useVerifyCheckout(sessionId: string | null) {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useQuery({
+    queryKey: ['/api/checkout/verify', sessionId],
+    queryFn: async () => {
+      if (!sessionId) return null;
+
+      const res = await fetch(`/api/checkout/verify?session_id=${sessionId}`, {
+        credentials: 'include',
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to verify payment');
+      }
+
+      const data = await res.json();
+      
+      if (data.success) {
+        queryClient.invalidateQueries({ queryKey: [api.bookings.list.path] });
+      }
+
+      return data;
+    },
+    enabled: !!sessionId,
+  });
+}
+
 // Create a new booking
 export function useCreateBooking() {
   const queryClient = useQueryClient();
