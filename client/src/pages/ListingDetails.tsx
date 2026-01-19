@@ -1,8 +1,8 @@
-import { useRoute } from "wouter";
+import { useRoute, Link } from "wouter";
 import { useListing } from "@/hooks/use-listings";
 import { useCheckout } from "@/hooks/use-bookings";
 import { useAuth } from "@/hooks/use-auth";
-import { Loader2, MapPin, Check, Shield, User } from "lucide-react";
+import { Loader2, MapPin, Check, Shield, User, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
@@ -200,6 +200,14 @@ function BookingDialog({ listing }: { listing: any }) {
             <span className="font-bold">Total</span>
             <span className="font-bold text-xl text-primary">${totalPrice.toFixed(2)}</span>
           </div>
+        </div>
+        <div className="flex items-start gap-2 text-xs text-muted-foreground bg-muted/50 p-3 rounded-lg">
+          <Info className="h-4 w-4 shrink-0 mt-0.5" />
+          <p>
+            By booking, you agree to our{" "}
+            <Link href="/terms" className="underline hover:text-foreground">Terms of Service</Link>. 
+            A $4.00 service fee applies. ParkNeighbor is not liable for any damages or losses.
+          </p>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
