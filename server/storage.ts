@@ -15,7 +15,8 @@ export interface IStorage {
   
   // Bookings
   getBookingsByUser(userId: string): Promise<BookingWithListing[]>;
-  createBooking(booking: InsertBooking): Promise<Booking>;
+  createBooking(booking: InsertBooking & { stripeSessionId?: string }): Promise<Booking>;
+  getBookingBySessionId(sessionId: string): Promise<Booking | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -49,20 +50,24 @@ export class DatabaseStorage implements IStorage {
     }));
   }
 
-  async createBooking(insertBooking: InsertBooking): Promise<Booking> {
-    // Calculate total price based on duration (simplified logic for now)
-    // In a real app, we'd check availability and calculate price per hour/day
+  async createBooking(insertBooking: InsertBooking & { stripeSessionId?: string }): Promise<Booking> {
     const listing = await this.getListing(insertBooking.listingId);
     if (!listing) throw new Error("Listing not found");
 
-    const totalPrice = listing.price; // Flat rate for now or per unit logic
+    const totalPrice = listing.price;
 
     const [booking] = await db.insert(bookings).values({
       ...insertBooking,
       status: "confirmed",
       totalPrice,
+      stripeSessionId: insertBooking.stripeSessionId,
     }).returning();
     
+    return booking;
+  }
+
+  async getBookingBySessionId(sessionId: string): Promise<Booking | undefined> {
+    const [booking] = await db.select().from(bookings).where(eq(bookings.stripeSessionId, sessionId));
     return booking;
   }
 }

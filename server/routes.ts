@@ -5,6 +5,7 @@ import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
 import { insertListingSchema, insertBookingSchema } from "@shared/schema";
+import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -96,15 +97,132 @@ export async function registerRoutes(
     }
   });
 
+  // === Stripe Payment Routes ===
+  
+  app.get('/api/stripe/publishable-key', async (req, res) => {
+    try {
+      const publishableKey = await getStripePublishableKey();
+      res.json({ publishableKey });
+    } catch (error) {
+      console.error('Error getting Stripe publishable key:', error);
+      res.status(500).json({ message: 'Payment system unavailable' });
+    }
+  });
+
+  app.post('/api/checkout', async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const { listingId, startTime, endTime } = req.body;
+      
+      if (!listingId) {
+        return res.status(400).json({ message: "Listing ID is required" });
+      }
+
+      const listing = await storage.getListing(listingId);
+      if (!listing) {
+        return res.status(404).json({ message: "Listing not found" });
+      }
+
+      const userId = (req.user as any).claims.sub;
+      const TRANSACTION_FEE = 400;
+
+      const stripe = await getUncachableStripeClient();
+
+      const baseUrl = `https://${process.env.REPLIT_DOMAINS?.split(',')[0]}`;
+      
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price_data: {
+              currency: 'usd',
+              product_data: {
+                name: listing.title,
+                description: `Parking at ${listing.address}`,
+              },
+              unit_amount: listing.price,
+            },
+            quantity: 1,
+          },
+          {
+            price_data: {
+              currency: 'usd',
+              product_data: {
+                name: 'ParkNeighbor Transaction Fee',
+                description: 'Service fee for booking',
+              },
+              unit_amount: TRANSACTION_FEE,
+            },
+            quantity: 1,
+          },
+        ],
+        mode: 'payment',
+        success_url: `${baseUrl}/booking/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${baseUrl}/browse`,
+        metadata: {
+          listingId: listingId.toString(),
+          userId,
+          startTime: startTime || new Date().toISOString(),
+          endTime: endTime || new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString(),
+        },
+      });
+
+      res.json({ url: session.url });
+    } catch (error: any) {
+      console.error('Checkout error:', error);
+      res.status(500).json({ message: 'Failed to create checkout session' });
+    }
+  });
+
+  app.get('/api/checkout/verify', async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const { session_id } = req.query;
+      
+      if (!session_id || typeof session_id !== 'string') {
+        return res.status(400).json({ message: "Session ID is required" });
+      }
+
+      const stripe = await getUncachableStripeClient();
+      const session = await stripe.checkout.sessions.retrieve(session_id);
+
+      if (session.payment_status === 'paid') {
+        const metadata = session.metadata!;
+        const userId = (req.user as any).claims.sub;
+        
+        const existingBooking = await storage.getBookingBySessionId(session_id);
+        if (existingBooking) {
+          return res.json({ success: true, booking: existingBooking });
+        }
+
+        const booking = await storage.createBooking({
+          listingId: parseInt(metadata.listingId),
+          userId,
+          startTime: new Date(metadata.startTime),
+          endTime: new Date(metadata.endTime),
+          stripeSessionId: session_id,
+        });
+
+        return res.json({ success: true, booking });
+      }
+
+      res.json({ success: false, message: 'Payment not completed' });
+    } catch (error: any) {
+      console.error('Verify checkout error:', error);
+      res.status(500).json({ message: 'Failed to verify payment' });
+    }
+  });
+
   // Seed data function
   async function seedDatabase() {
     const listings = await storage.getListings();
     if (listings.length === 0) {
-      // Create some dummy listings
-      // Note: userId needs to be a valid user ID, but for seeding we might need to rely on users being created first
-      // or just create a placeholder if the FK constraint allows it, but it references auth users.
-      // Since we can't easily fake Replit Auth users, we might skip seeding or seed only if we can find a user.
-      // For now, we'll skip auto-seeding listings to avoid FK errors until a user logs in and we can maybe seed for them.
       console.log("Database seeded with initial structure.");
     }
   }

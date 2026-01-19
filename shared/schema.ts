@@ -31,6 +31,7 @@ export const bookings = pgTable("bookings", {
   endTime: timestamp("end_time").notNull(),
   status: text("status", { enum: ["pending", "confirmed", "cancelled"] }).default("confirmed").notNull(),
   totalPrice: integer("total_price").notNull(),
+  stripeSessionId: text("stripe_session_id"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
