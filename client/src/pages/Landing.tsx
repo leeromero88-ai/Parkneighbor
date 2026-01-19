@@ -1,8 +1,9 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
-import { ArrowRight, CheckCircle2, MapPin, ShieldCheck, DollarSign } from "lucide-react";
+import { ArrowRight, MapPin, ShieldCheck, DollarSign } from "lucide-react";
 import { motion } from "framer-motion";
+import logoUrl from "@/assets/logo.png";
 
 export default function Landing() {
   const { isAuthenticated } = useAuth();
@@ -20,8 +21,8 @@ export default function Landing() {
               className="flex flex-col gap-6"
             >
               <div className="inline-flex items-center rounded-full border px-3 py-1 text-sm font-medium bg-muted/50 backdrop-blur">
-                <span className="flex h-2 w-2 rounded-full bg-accent mr-2"></span>
-                Official Partner for Neighbors
+                <img src={logoUrl} alt="ParkNeighbor" className="h-5 w-5 mr-2 rounded" />
+                ParkNeighbor
               </div>
               <h1 className="font-display text-4xl font-extrabold tracking-tight sm:text-5xl xl:text-7xl">
                 Parking near <span className="text-primary">Hard Rock</span> made easy.

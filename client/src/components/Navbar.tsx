@@ -10,7 +10,8 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Car, Menu, User, LogOut, MapPin, PlusCircle } from "lucide-react";
+import { Menu, User, LogOut, MapPin, PlusCircle } from "lucide-react";
+import logoUrl from "@/assets/logo.png";
 
 export function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -25,11 +26,9 @@ export function Navbar() {
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 transition-transform hover:scale-105">
-          <div className="bg-primary text-primary-foreground p-2 rounded-lg shadow-lg shadow-primary/25">
-            <Car className="h-6 w-6" />
-          </div>
+          <img src={logoUrl} alt="ParkNeighbor" className="h-10 w-10 rounded-lg shadow-lg" />
           <span className="font-display font-bold text-xl tracking-tight hidden sm:block">
-            StadiumPark
+            ParkNeighbor
           </span>
         </Link>
 
