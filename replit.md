@@ -32,6 +32,7 @@ shared/                  # Shared types and schemas
 - 2026-01-19: Added custom logo
 - 2026-01-19: Integrated Stripe payments with $4.00 transaction fee
 - 2026-01-19: Added Terms of Service, liability disclaimers, and footer
+- 2026-01-19: Added About Us page with company info, how it works, and contact section
 
 ## User Preferences
 - App name: ParkNeighbor
