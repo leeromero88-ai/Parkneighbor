@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Menu, User, LogOut, MapPin, PlusCircle } from "lucide-react";
+import { Car, Menu, User, LogOut, MapPin, PlusCircle } from "lucide-react";
 import logoUrl from "@/assets/logo.png";
 
 export function Navbar() {
