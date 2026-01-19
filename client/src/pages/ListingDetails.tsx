@@ -1,6 +1,6 @@
-import { useRoute, Link } from "wouter";
+import { useRoute, Link, useLocation } from "wouter";
 import { useListing } from "@/hooks/use-listings";
-import { useCheckout } from "@/hooks/use-bookings";
+import { useCreateBooking } from "@/hooks/use-bookings";
 import { useAuth } from "@/hooks/use-auth";
 import { Loader2, MapPin, Check, Shield, User, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -106,18 +106,9 @@ export default function ListingDetails() {
                       <span className="font-medium">{format(new Date(listing.availableTo), "h:mm a")}</span>
                     </div>
                     <div className="h-px bg-border my-4" />
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Parking</span>
-                      <span className="font-medium">${(listing.price / 100).toFixed(2)}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Service fee</span>
-                      <span className="font-medium">$4.00</span>
-                    </div>
-                    <div className="h-px bg-border my-4" />
                     <div className="flex items-center justify-between font-bold text-lg">
-                      <span>Total</span>
-                      <span>${((listing.price / 100) + 4).toFixed(2)}</span>
+                      <span>Price</span>
+                      <span>${(listing.price / 100).toFixed(2)}</span>
                     </div>
                   </div>
 
@@ -147,18 +138,22 @@ export default function ListingDetails() {
 }
 
 function BookingDialog({ listing }: { listing: any }) {
-  const { mutate, isPending } = useCheckout();
+  const { mutate, isPending } = useCreateBooking();
   const [open, setOpen] = useState(false);
+  const [, setLocation] = useLocation();
 
   const handleBook = () => {
     mutate({
       listingId: listing.id,
-      startTime: new Date(listing.availableFrom).toISOString(),
-      endTime: new Date(listing.availableTo).toISOString(),
+      startTime: new Date(listing.availableFrom),
+      endTime: new Date(listing.availableTo),
+    }, {
+      onSuccess: () => {
+        setOpen(false);
+        setLocation("/bookings");
+      }
     });
   };
-
-  const totalPrice = (listing.price / 100) + 4;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -188,17 +183,9 @@ function BookingDialog({ listing }: { listing: any }) {
               {format(new Date(listing.availableFrom), "h:mm a")} - {format(new Date(listing.availableTo), "h:mm a")}
             </span>
           </div>
-          <div className="flex justify-between items-center pt-2">
-            <span className="text-sm text-muted-foreground">Parking</span>
-            <span className="font-medium">${(listing.price / 100).toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-muted-foreground">Service fee</span>
-            <span className="font-medium">$4.00</span>
-          </div>
           <div className="flex justify-between items-center border-t pt-4">
-            <span className="font-bold">Total</span>
-            <span className="font-bold text-xl text-primary">${totalPrice.toFixed(2)}</span>
+            <span className="font-bold">Price</span>
+            <span className="font-bold text-xl text-primary">${(listing.price / 100).toFixed(2)}</span>
           </div>
         </div>
         <div className="flex items-start gap-2 text-xs text-muted-foreground bg-muted/50 p-3 rounded-lg">
@@ -206,14 +193,14 @@ function BookingDialog({ listing }: { listing: any }) {
           <p>
             By booking, you agree to our{" "}
             <Link href="/terms" className="underline hover:text-foreground">Terms of Service</Link>. 
-            A $4.00 service fee applies. ParkNeighbor is not liable for any damages or losses.
+            ParkNeighbor is not liable for any damages or losses.
           </p>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-          <Button onClick={handleBook} disabled={isPending} data-testid="button-confirm-payment">
+          <Button variant="outline" onClick={() => setOpen(false)} data-testid="button-cancel-booking">Cancel</Button>
+          <Button onClick={handleBook} disabled={isPending} data-testid="button-confirm-booking">
             {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Proceed to Payment
+            Confirm Booking
           </Button>
         </DialogFooter>
       </DialogContent>
