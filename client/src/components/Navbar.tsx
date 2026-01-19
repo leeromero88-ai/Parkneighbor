@@ -27,9 +27,12 @@ export function Navbar() {
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 transition-transform hover:scale-105">
           <img src={logoUrl} alt="ParkNeighbor" className="h-10 w-10 rounded-lg shadow-lg" />
-          <span className="font-display font-bold text-xl tracking-tight hidden sm:block">
-            ParkNeighbor
-          </span>
+          <div className="hidden sm:flex flex-col">
+            <span className="font-display font-bold text-xl tracking-tight leading-tight">
+              ParkNeighbor
+            </span>
+            <span className="text-xs text-muted-foreground italic">Park like a local</span>
+          </div>
         </Link>
 
         {/* Desktop Nav */}

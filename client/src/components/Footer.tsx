@@ -8,7 +8,10 @@ export function Footer() {
         <div className="flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-3">
             <img src={logoPath} alt="ParkNeighbor" className="h-8 w-8" />
-            <span className="font-display font-bold text-lg">ParkNeighbor</span>
+            <div className="flex flex-col">
+              <span className="font-display font-bold text-lg leading-tight">ParkNeighbor</span>
+              <span className="text-xs text-muted-foreground italic">Park like a local</span>
+            </div>
           </div>
           
           <div className="flex flex-wrap justify-center gap-6 text-sm">
