@@ -58,7 +58,7 @@ export default function Landing() {
               <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-primary to-accent blur-[100px] opacity-20 animate-pulse" />
               {/* Stadium aerial parking lot */}
               <img
-                src="https://pixabay.com/get/gc438a0a4f480e5d5802ed181eac8337eefb748a51b61821ad314277045b728ef8813f893b632f27b8b03b4236f315ab1d2f176d85cd58a81dffd680d08fc5c02_1280.jpg"
+                src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&auto=format&fit=crop&q=80"
                 alt="Parking Lot"
                 className="relative rounded-3xl shadow-2xl border-4 border-background object-cover w-full h-full rotate-3 hover:rotate-0 transition-all duration-500"
               />
