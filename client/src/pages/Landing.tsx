@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { ArrowRight, MapPin, ShieldCheck, DollarSign } from "lucide-react";
 import { motion } from "framer-motion";
 import logoUrl from "@/assets/logo.png";
+import heroParkingUrl from "@/assets/hero-parking.jpg";
 
 export default function Landing() {
   const { isAuthenticated } = useAuth();
@@ -58,7 +59,7 @@ export default function Landing() {
               <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-primary to-accent blur-[100px] opacity-20 animate-pulse" />
               {/* Stadium aerial parking lot */}
               <img
-                src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&auto=format&fit=crop&q=80"
+                src={heroParkingUrl}
                 alt="Parking Lot"
                 className="relative rounded-3xl shadow-2xl border-4 border-background object-cover w-full h-full rotate-3 hover:rotate-0 transition-all duration-500"
               />
