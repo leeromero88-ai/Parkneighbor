@@ -15,6 +15,7 @@ export interface IStorage {
   
   // Bookings
   getBookingsByUser(userId: string): Promise<BookingWithListing[]>;
+  getBookingById(id: number, userId: string): Promise<BookingWithListing | undefined>;
   createBooking(booking: InsertBooking & { userId: string; stripeSessionId?: string | null }): Promise<Booking>;
   getBookingBySessionId(sessionId: string): Promise<Booking | undefined>;
 }
@@ -48,6 +49,23 @@ export class DatabaseStorage implements IStorage {
       ...row.booking,
       listing: row.listing
     }));
+  }
+
+  async getBookingById(id: number, userId: string): Promise<BookingWithListing | undefined> {
+    const results = await db.select({
+      booking: bookings,
+      listing: listings
+    })
+    .from(bookings)
+    .innerJoin(listings, eq(bookings.listingId, listings.id))
+    .where(and(eq(bookings.id, id), eq(bookings.userId, userId)));
+
+    if (results.length === 0) return undefined;
+    
+    return {
+      ...results[0].booking,
+      listing: results[0].listing
+    };
   }
 
   async createBooking(insertBooking: InsertBooking & { userId: string; stripeSessionId?: string | null }): Promise<Booking> {

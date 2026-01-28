@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, type BookingInput } from "@shared/routes";
 import { useToast } from "@/hooks/use-toast";
+import type { BookingWithListing } from "@shared/schema";
 
 // Fetch user's bookings
 export function useBookings() {
@@ -80,6 +81,20 @@ export function useVerifyCheckout(sessionId: string | null) {
       return data;
     },
     enabled: !!sessionId,
+  });
+}
+
+// Fetch a single booking by ID
+export function useBooking(id: number | null) {
+  return useQuery<BookingWithListing | null>({
+    queryKey: ['/api/bookings', id],
+    queryFn: async () => {
+      if (!id) return null;
+      const res = await fetch(`/api/bookings/${id}`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch booking");
+      return res.json();
+    },
+    enabled: !!id,
   });
 }
 

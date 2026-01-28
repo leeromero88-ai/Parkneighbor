@@ -64,6 +64,26 @@ export async function registerRoutes(
     res.json(bookings);
   });
 
+  app.get('/api/bookings/:id', async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    const userId = (req.user as any).claims.sub;
+    const id = Number(req.params.id);
+    
+    if (isNaN(id)) {
+      return res.status(400).json({ message: "Invalid booking ID" });
+    }
+    
+    const booking = await storage.getBookingById(id, userId);
+    if (!booking) {
+      return res.status(404).json({ message: "Booking not found" });
+    }
+    
+    res.json(booking);
+  });
+
   app.post(api.bookings.create.path, async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Unauthorized" });

@@ -148,9 +148,9 @@ function BookingDialog({ listing }: { listing: any }) {
       startTime: new Date(listing.availableFrom),
       endTime: new Date(listing.availableTo),
     }, {
-      onSuccess: () => {
+      onSuccess: (booking) => {
         setOpen(false);
-        setLocation("/bookings");
+        setLocation(`/booking/confirmed?id=${booking.id}`);
       }
     });
   };
