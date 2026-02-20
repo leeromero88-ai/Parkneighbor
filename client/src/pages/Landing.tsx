@@ -41,10 +41,12 @@ export default function Landing() {
                     </Button>
                   </Link>
                 ) : (
-                  <Button size="lg" className="text-lg px-8 h-14 rounded-xl shadow-xl shadow-primary/20 hover:shadow-2xl hover:translate-y-[-2px] transition-all" data-testid="button-login-hero" onClick={() => window.location.assign("/api/login")}>
-                    Login to Start
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </Button>
+                  <a href="/api/login" data-testid="button-login-hero" className="inline-block" onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.location.href = "/api/login"; }}>
+                    <Button size="lg" className="text-lg px-8 h-14 rounded-xl shadow-xl shadow-primary/20 hover:shadow-2xl hover:translate-y-[-2px] transition-all pointer-events-none">
+                      Login to Start
+                      <ArrowRight className="ml-2 h-5 w-5" />
+                    </Button>
+                  </a>
                 )}
                 {!isAuthenticated && (
                   <Link href="/browse">
