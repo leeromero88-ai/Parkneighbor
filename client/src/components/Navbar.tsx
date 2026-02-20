@@ -53,7 +53,7 @@ export function Navbar() {
         {/* Auth Buttons */}
         <div className="flex items-center gap-4">
           {!isAuthenticated ? (
-            <Button onClick={handleLogin} variant="default" className="shadow-lg shadow-primary/20">
+            <Button onClick={handleLogin} variant="default" className="shadow-lg shadow-primary/20" data-testid="button-login-nav">
               Login
             </Button>
           ) : (

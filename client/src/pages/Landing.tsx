@@ -33,12 +33,19 @@ export default function Landing() {
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 mt-4">
-                <Link href={isAuthenticated ? "/browse" : "/api/login"}>
-                  <Button size="lg" className="text-lg px-8 h-14 rounded-xl shadow-xl shadow-primary/20 hover:shadow-2xl hover:translate-y-[-2px] transition-all">
-                    {isAuthenticated ? "Find Parking Now" : "Login to Start"}
+                {isAuthenticated ? (
+                  <Link href="/browse">
+                    <Button size="lg" className="text-lg px-8 h-14 rounded-xl shadow-xl shadow-primary/20 hover:shadow-2xl hover:translate-y-[-2px] transition-all" data-testid="button-find-parking">
+                      Find Parking Now
+                      <ArrowRight className="ml-2 h-5 w-5" />
+                    </Button>
+                  </Link>
+                ) : (
+                  <Button size="lg" className="text-lg px-8 h-14 rounded-xl shadow-xl shadow-primary/20 hover:shadow-2xl hover:translate-y-[-2px] transition-all" data-testid="button-login-hero" onClick={() => { window.location.href = "/api/login"; }}>
+                    Login to Start
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
-                </Link>
+                )}
                 {!isAuthenticated && (
                   <Link href="/browse">
                     <Button variant="outline" size="lg" className="text-lg px-8 h-14 rounded-xl">
