@@ -9,6 +9,10 @@ import heroParkingUrl from "@/assets/hero-parking.jpg";
 export default function Landing() {
   const { isAuthenticated } = useAuth();
 
+  const handleLogin = () => {
+    window.location.href = "/api/login";
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
@@ -41,12 +45,10 @@ export default function Landing() {
                     </Button>
                   </Link>
                 ) : (
-                  <div onClick={() => { window.location.href = "/api/login"; }} data-testid="button-login-hero">
-                    <Button size="lg" className="text-lg px-8 h-14 rounded-xl shadow-xl shadow-primary/20 hover:shadow-2xl hover:translate-y-[-2px] transition-all cursor-pointer">
-                      Login to Start
-                      <ArrowRight className="ml-2 h-5 w-5" />
-                    </Button>
-                  </div>
+                  <Button size="lg" className="text-lg px-8 h-14 rounded-xl shadow-xl shadow-primary/20 hover:shadow-2xl hover:translate-y-[-2px] transition-all" data-testid="button-login-hero" onClick={handleLogin}>
+                    Login to Start
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
                 )}
                 {!isAuthenticated && (
                   <Link href="/browse">
