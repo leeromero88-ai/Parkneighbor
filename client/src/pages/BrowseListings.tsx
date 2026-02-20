@@ -7,16 +7,18 @@ import { Search, Loader2, MapPinOff } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function BrowseListings() {
+  const [inputValue, setInputValue] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const { data: listings, isLoading, isError } = useListings(searchTerm);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // Search is handled by controlled input + react-query caching logic 
-    // but typically we'd debounce the hook input. 
-    // For simplicity, we just let the hook refetch on state change if we passed searchTerm directly,
-    // or here we rely on the user typing. 
-    // In this implementation, useListings takes a search param.
+    setSearchTerm(inputValue);
+  };
+
+  const handleClear = () => {
+    setInputValue("");
+    setSearchTerm("");
   };
 
   return (
@@ -26,18 +28,30 @@ export default function BrowseListings() {
         <div className="container py-6">
           <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-4">
             <div>
-              <h1 className="text-2xl font-display font-bold">Find Parking</h1>
+              <h1 className="text-2xl font-display font-bold" data-testid="text-find-parking-title">Find Parking</h1>
               <p className="text-muted-foreground">Available spots near Hard Rock Stadium</p>
             </div>
             
-            <form onSubmit={handleSearch} className="relative w-full md:w-96">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input 
-                placeholder="Search by street name..." 
-                className="pl-10 h-11 rounded-xl bg-muted/50 border-transparent focus:bg-background focus:border-primary transition-all"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+            <form onSubmit={handleSearch} className="flex w-full md:w-auto gap-2">
+              <div className="relative flex-1 md:w-80">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input 
+                  placeholder="Search by address or street..." 
+                  className="pl-10 h-11 rounded-xl bg-muted/50 border-transparent focus:bg-background focus:border-primary transition-all"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  data-testid="input-search"
+                />
+              </div>
+              <Button type="submit" size="default" className="h-11 px-5 rounded-xl shadow-sm" data-testid="button-search">
+                <Search className="h-4 w-4 mr-2" />
+                Search
+              </Button>
+              {searchTerm && (
+                <Button type="button" variant="ghost" size="default" className="h-11 px-3 rounded-xl" onClick={handleClear} data-testid="button-clear-search">
+                  Clear
+                </Button>
+              )}
             </form>
           </div>
         </div>
