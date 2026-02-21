@@ -11,10 +11,11 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import { CalendarIcon, Loader2 } from "lucide-react";
+import { CalendarIcon, Loader2, Upload, X, ImageIcon } from "lucide-react";
 import { useLocation } from "wouter";
+import { useState, useRef } from "react";
+import { useToast } from "@/hooks/use-toast";
 
-// Extend schema for form usage (price input as string then converted)
 const formSchema = insertListingSchema.extend({
   price: z.coerce.number().min(1, "Price must be at least $0.01"),
 });
@@ -24,6 +25,10 @@ type FormValues = z.infer<typeof formSchema>;
 export function CreateListingForm() {
   const [, setLocation] = useLocation();
   const { mutate, isPending } = useCreateListing();
+  const [uploading, setUploading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -34,12 +39,44 @@ export function CreateListingForm() {
       imageUrl: "",
       price: 0,
       availableFrom: new Date(),
-      availableTo: new Date(Date.now() + 86400000), // tomorrow
+      availableTo: new Date(Date.now() + 86400000),
     },
   });
 
+  const handleImageUpload = async (file: File) => {
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("image", file);
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        const json = await res.json();
+        throw new Error(json.message || "Failed to upload image");
+      }
+
+      const data = await res.json();
+      form.setValue("imageUrl", data.imageUrl);
+      setPreviewUrl(data.imageUrl);
+    } catch (error: any) {
+      toast({ title: "Upload Failed", description: error.message, variant: "destructive" });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeImage = () => {
+    form.setValue("imageUrl", "");
+    setPreviewUrl(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   const onSubmit = (data: FormValues) => {
-    // Convert dollars to cents for API
     const apiData = {
       ...data,
       price: Math.round(data.price * 100), 
@@ -47,7 +84,7 @@ export function CreateListingForm() {
     
     mutate(apiData, {
       onSuccess: () => {
-        setLocation("/browse");
+        setLocation("/my-listings");
       },
     });
   };
@@ -63,7 +100,7 @@ export function CreateListingForm() {
               <FormItem>
                 <FormLabel>Listing Title</FormLabel>
                 <FormControl>
-                  <Input placeholder="e.g. 5 min walk to Hard Rock" {...field} />
+                  <Input placeholder="e.g. 5 min walk to Hard Rock" {...field} data-testid="input-listing-title" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -77,7 +114,7 @@ export function CreateListingForm() {
               <FormItem>
                 <FormLabel>Price ($)</FormLabel>
                 <FormControl>
-                  <Input type="number" step="0.01" placeholder="25.00" {...field} />
+                  <Input type="number" step="0.01" placeholder="25.00" {...field} data-testid="input-listing-price" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -92,7 +129,7 @@ export function CreateListingForm() {
             <FormItem>
               <FormLabel>Address</FormLabel>
               <FormControl>
-                <Input placeholder="123 Stadium Dr, Miami Gardens, FL" {...field} />
+                <Input placeholder="123 Stadium Dr, Miami Gardens, FL" {...field} data-testid="input-listing-address" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -110,6 +147,7 @@ export function CreateListingForm() {
                   placeholder="Describe your spot (paved, grass, secure, etc.)" 
                   className="min-h-[100px]"
                   {...field} 
+                  data-testid="input-listing-description"
                 />
               </FormControl>
               <FormMessage />
@@ -120,11 +158,56 @@ export function CreateListingForm() {
         <FormField
           control={form.control}
           name="imageUrl"
-          render={({ field }) => (
+          render={() => (
             <FormItem>
-              <FormLabel>Image URL (Optional)</FormLabel>
+              <FormLabel>Photo of Your Spot</FormLabel>
               <FormControl>
-                <Input placeholder="https://..." {...field} value={field.value || ""} />
+                <div>
+                  {previewUrl ? (
+                    <div className="relative rounded-lg overflow-hidden border">
+                      <img src={previewUrl} alt="Parking spot preview" className="w-full h-48 object-cover" />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute top-2 right-2 h-8 w-8 rounded-full"
+                        onClick={removeImage}
+                        data-testid="button-remove-image"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div
+                      className="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 hover:bg-muted/30 transition-colors"
+                      onClick={() => fileInputRef.current?.click()}
+                      data-testid="button-upload-image"
+                    >
+                      {uploading ? (
+                        <div className="flex flex-col items-center gap-2">
+                          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                          <p className="text-sm text-muted-foreground">Uploading...</p>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center gap-2">
+                          <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                          <p className="text-sm font-medium">Click to upload a photo</p>
+                          <p className="text-xs text-muted-foreground">JPEG, PNG, WebP or GIF (max 5MB)</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleImageUpload(file);
+                    }}
+                  />
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -215,8 +298,9 @@ export function CreateListingForm() {
 
         <Button 
           type="submit" 
-          disabled={isPending}
+          disabled={isPending || uploading}
           className="w-full bg-gradient-to-r from-primary to-primary/90 shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30"
+          data-testid="button-create-listing"
         >
           {isPending ? (
             <>

@@ -2,13 +2,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, buildUrl, type ListingInput } from "@shared/routes";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
+import type { Listing } from "@shared/schema";
 
-// Fetch all listings (with optional search)
 export function useListings(search?: string) {
   return useQuery({
     queryKey: [api.listings.list.path, search],
     queryFn: async () => {
-      // Build URL with query params
       const url = new URL(api.listings.list.path, window.location.origin);
       if (search) {
         url.searchParams.set("search", search);
@@ -23,7 +22,18 @@ export function useListings(search?: string) {
   });
 }
 
-// Fetch single listing
+export function useMyListings() {
+  return useQuery<Listing[]>({
+    queryKey: ["/api/my-listings"],
+    queryFn: async () => {
+      const res = await fetch("/api/my-listings", { credentials: "include" });
+      if (res.status === 401) return [];
+      if (!res.ok) throw new Error("Failed to fetch your listings");
+      return res.json();
+    },
+  });
+}
+
 export function useListing(id: number) {
   return useQuery({
     queryKey: [api.listings.get.path, id],
@@ -41,14 +51,12 @@ export function useListing(id: number) {
   });
 }
 
-// Create a new listing
 export function useCreateListing() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (data: ListingInput) => {
-      // Validate input before sending
       const validated = api.listings.create.input.parse(data);
       
       const res = await fetch(api.listings.create.path, {
@@ -73,9 +81,44 @@ export function useCreateListing() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [api.listings.list.path] });
+      queryClient.invalidateQueries({ queryKey: ["/api/my-listings"] });
       toast({
         title: "Success!",
         description: "Your parking spot has been listed.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+}
+
+export function useDeleteListing() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/listings/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const json = await res.json();
+        throw new Error(json.message || "Failed to delete listing");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [api.listings.list.path] });
+      queryClient.invalidateQueries({ queryKey: ["/api/my-listings"] });
+      toast({
+        title: "Listing Removed",
+        description: "Your parking spot has been unlisted.",
       });
     },
     onError: (error) => {

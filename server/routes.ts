@@ -6,6 +6,34 @@ import { api } from "@shared/routes";
 import { z } from "zod";
 import { insertListingSchema, insertBookingSchema } from "@shared/schema";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+
+const uploadsDir = path.join(process.cwd(), "uploads");
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: uploadsDir,
+    filename: (req, file, cb) => {
+      const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+      const ext = path.extname(file.originalname);
+      cb(null, `listing-${uniqueSuffix}${ext}`);
+    },
+  }),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    if (allowed.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only JPEG, PNG, WebP, and GIF images are allowed"));
+    }
+  },
+});
 
 export async function registerRoutes(
   httpServer: Server,
@@ -50,6 +78,74 @@ export async function registerRoutes(
       }
       throw err;
     }
+  });
+
+  // Serve uploaded images
+  app.use('/uploads', (await import('express')).default.static(uploadsDir));
+
+  // Image upload endpoint
+  app.post('/api/upload', (req, res, next) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    next();
+  }, (req, res, next) => {
+    upload.single('image')(req, res, (err) => {
+      if (err instanceof multer.MulterError) {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          return res.status(400).json({ message: "Image must be under 5MB" });
+        }
+        return res.status(400).json({ message: "Upload error: " + err.message });
+      }
+      if (err) {
+        return res.status(400).json({ message: err.message });
+      }
+      next();
+    });
+  }, (req, res) => {
+    if (!req.file) {
+      return res.status(400).json({ message: "No image uploaded" });
+    }
+    const imageUrl = `/uploads/${req.file.filename}`;
+    res.json({ imageUrl });
+  });
+
+  // Get current user's listings
+  app.get('/api/my-listings', async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const userId = (req.user as any).claims.sub;
+    const userListings = await storage.getListingsByUser(userId);
+    res.json(userListings);
+  });
+
+  // Delete a listing (only the owner can delete)
+  app.delete('/api/listings/:id', async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const userId = (req.user as any).claims.sub;
+    const id = Number(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ message: "Invalid listing ID" });
+    }
+
+    const listing = await storage.getListing(id);
+    if (!listing || listing.userId !== userId) {
+      return res.status(404).json({ message: "Listing not found or you don't own it" });
+    }
+
+    if (listing.imageUrl && listing.imageUrl.startsWith('/uploads/')) {
+      const filePath = path.join(uploadsDir, path.basename(listing.imageUrl));
+      try { fs.unlinkSync(filePath); } catch {}
+    }
+
+    const deleted = await storage.deleteListing(id, userId);
+    if (!deleted) {
+      return res.status(404).json({ message: "Failed to delete listing" });
+    }
+    res.json({ success: true });
   });
 
   // === Bookings Routes ===

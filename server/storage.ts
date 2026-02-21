@@ -11,8 +11,10 @@ import { eq, desc, and } from "drizzle-orm";
 export interface IStorage {
   // Listings
   getListings(): Promise<Listing[]>;
+  getListingsByUser(userId: string): Promise<Listing[]>;
   getListing(id: number): Promise<Listing | undefined>;
   createListing(listing: InsertListing & { userId: string }): Promise<Listing>;
+  deleteListing(id: number, userId: string): Promise<boolean>;
   
   // Bookings
   getBookingsByUser(userId: string): Promise<BookingWithListing[]>;
@@ -36,9 +38,18 @@ export class DatabaseStorage implements IStorage {
     return listing;
   }
 
+  async getListingsByUser(userId: string): Promise<Listing[]> {
+    return await db.select().from(listings).where(eq(listings.userId, userId)).orderBy(desc(listings.createdAt));
+  }
+
   async createListing(insertListing: InsertListing & { userId: string }): Promise<Listing> {
     const [listing] = await db.insert(listings).values(insertListing).returning();
     return listing;
+  }
+
+  async deleteListing(id: number, userId: string): Promise<boolean> {
+    const result = await db.delete(listings).where(and(eq(listings.id, id), eq(listings.userId, userId))).returning();
+    return result.length > 0;
   }
 
   async getBookingsByUser(userId: string): Promise<BookingWithListing[]> {

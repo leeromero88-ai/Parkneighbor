@@ -19,7 +19,7 @@ import {
   SheetClose,
 } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Car, Menu, User, LogOut, MapPin, PlusCircle, X, Info, Banknote } from "lucide-react";
+import { Car, Menu, User, LogOut, MapPin, PlusCircle, X, Info, Banknote, List } from "lucide-react";
 import logoUrl from "@/assets/logo.png";
 
 export function Navbar() {
@@ -107,6 +107,11 @@ export function Navbar() {
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
+                      <Link href="/my-listings" className="cursor-pointer">
+                        <List className="mr-2 h-4 w-4" /> My Listings
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
                       <Link href="/create-listing" className="cursor-pointer">
                         <PlusCircle className="mr-2 h-4 w-4" /> Create Listing
                       </Link>
@@ -179,6 +184,13 @@ export function Navbar() {
                       <Link href="/bookings" className={`flex items-center gap-3 px-6 py-3 text-sm font-medium transition-colors hover:bg-muted ${location === '/bookings' ? 'text-primary bg-primary/5' : ''}`} data-testid="link-mobile-bookings">
                         <Car className="h-5 w-5" />
                         My Bookings
+                      </Link>
+                    </SheetClose>
+
+                    <SheetClose asChild>
+                      <Link href="/my-listings" className={`flex items-center gap-3 px-6 py-3 text-sm font-medium transition-colors hover:bg-muted ${location === '/my-listings' ? 'text-primary bg-primary/5' : ''}`} data-testid="link-mobile-my-listings">
+                        <List className="h-5 w-5" />
+                        My Listings
                       </Link>
                     </SheetClose>
 

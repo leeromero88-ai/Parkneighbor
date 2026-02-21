@@ -15,6 +15,7 @@ import Terms from "@/pages/Terms";
 import About from "@/pages/About";
 import HostOnboarding from "@/pages/HostOnboarding";
 import HostOnboardingComplete from "@/pages/HostOnboardingComplete";
+import MyListings from "@/pages/MyListings";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -34,6 +35,7 @@ function Router() {
           <Route path="/about" component={About} />
           <Route path="/host/onboarding" component={HostOnboarding} />
           <Route path="/host/onboarding/complete" component={HostOnboardingComplete} />
+          <Route path="/my-listings" component={MyListings} />
           <Route component={NotFound} />
         </Switch>
       </main>
