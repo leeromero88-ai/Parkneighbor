@@ -19,7 +19,7 @@ import {
   SheetClose,
 } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Car, Menu, User, LogOut, MapPin, PlusCircle, X, Info } from "lucide-react";
+import { Car, Menu, User, LogOut, MapPin, PlusCircle, X, Info, Banknote } from "lucide-react";
 import logoUrl from "@/assets/logo.png";
 
 export function Navbar() {
@@ -111,6 +111,11 @@ export function Navbar() {
                         <PlusCircle className="mr-2 h-4 w-4" /> Create Listing
                       </Link>
                     </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/host/onboarding" className="cursor-pointer">
+                        <Banknote className="mr-2 h-4 w-4" /> Set Up Payouts
+                      </Link>
+                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => logout()} className="text-destructive focus:text-destructive cursor-pointer" data-testid="button-logout">
                       <LogOut className="mr-2 h-4 w-4" /> Log out
@@ -181,6 +186,13 @@ export function Navbar() {
                       <Link href="/create-listing" className={`flex items-center gap-3 px-6 py-3 text-sm font-medium transition-colors hover:bg-muted ${location === '/create-listing' ? 'text-primary bg-primary/5' : ''}`} data-testid="link-mobile-create">
                         <PlusCircle className="h-5 w-5" />
                         List Your Spot
+                      </Link>
+                    </SheetClose>
+
+                    <SheetClose asChild>
+                      <Link href="/host/onboarding" className={`flex items-center gap-3 px-6 py-3 text-sm font-medium transition-colors hover:bg-muted ${location === '/host/onboarding' ? 'text-primary bg-primary/5' : ''}`} data-testid="link-mobile-payouts">
+                        <Banknote className="h-5 w-5" />
+                        Set Up Payouts
                       </Link>
                     </SheetClose>
                   </>

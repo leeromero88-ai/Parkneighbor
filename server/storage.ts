@@ -5,6 +5,7 @@ import {
   type Booking, type InsertBooking, 
   type BookingWithListing
 } from "@shared/schema";
+import type { User } from "@shared/models/auth";
 import { eq, desc, and } from "drizzle-orm";
 
 export interface IStorage {
@@ -18,6 +19,11 @@ export interface IStorage {
   getBookingById(id: number, userId: string): Promise<BookingWithListing | undefined>;
   createBooking(booking: InsertBooking & { userId: string; stripeSessionId?: string | null }): Promise<Booking>;
   getBookingBySessionId(sessionId: string): Promise<Booking | undefined>;
+
+  // Stripe Connect
+  getUser(userId: string): Promise<User | undefined>;
+  updateStripeAccount(userId: string, stripeAccountId: string, status: string): Promise<User | undefined>;
+  updateStripeAccountStatus(userId: string, status: string): Promise<User | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -91,6 +97,29 @@ export class DatabaseStorage implements IStorage {
   async getBookingBySessionId(sessionId: string): Promise<Booking | undefined> {
     const [booking] = await db.select().from(bookings).where(eq(bookings.stripeSessionId, sessionId));
     return booking;
+  }
+
+  async getUser(userId: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, userId));
+    return user;
+  }
+
+  async updateStripeAccount(userId: string, stripeAccountId: string, status: string): Promise<User | undefined> {
+    const [user] = await db
+      .update(users)
+      .set({ stripeAccountId, stripeAccountStatus: status, updatedAt: new Date() })
+      .where(eq(users.id, userId))
+      .returning();
+    return user;
+  }
+
+  async updateStripeAccountStatus(userId: string, status: string): Promise<User | undefined> {
+    const [user] = await db
+      .update(users)
+      .set({ stripeAccountStatus: status, updatedAt: new Date() })
+      .where(eq(users.id, userId))
+      .returning();
+    return user;
   }
 }
 

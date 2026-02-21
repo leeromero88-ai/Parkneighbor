@@ -13,6 +13,8 @@ import BookingSuccess from "@/pages/BookingSuccess";
 import BookingConfirmed from "@/pages/BookingConfirmed";
 import Terms from "@/pages/Terms";
 import About from "@/pages/About";
+import HostOnboarding from "@/pages/HostOnboarding";
+import HostOnboardingComplete from "@/pages/HostOnboardingComplete";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -30,6 +32,8 @@ function Router() {
           <Route path="/booking/confirmed" component={BookingConfirmed} />
           <Route path="/terms" component={Terms} />
           <Route path="/about" component={About} />
+          <Route path="/host/onboarding" component={HostOnboarding} />
+          <Route path="/host/onboarding/complete" component={HostOnboardingComplete} />
           <Route component={NotFound} />
         </Switch>
       </main>

@@ -33,6 +33,7 @@ shared/                  # Shared types and schemas
 - 2026-01-19: Integrated Stripe payments with $4.00 transaction fee
 - 2026-01-19: Added Terms of Service, liability disclaimers, and footer
 - 2026-01-19: Added About Us page with company info, how it works, and contact section
+- 2026-02-21: Added Stripe Connect for host payouts (Express accounts, destination charges)
 
 ## User Preferences
 - App name: ParkNeighbor
@@ -47,5 +48,11 @@ shared/                  # Shared types and schemas
 - Stripe integration for payments:
   - Uses stripe-replit-sync for webhook handling
   - $4.00 (400 cents) transaction fee added to each booking
-  - Checkout session includes parking price + service fee
   - Bookings created after successful payment verification
+  - Stripe Connect (Express accounts) for host payouts:
+    - Hosts onboard at /host/onboarding, linking bank accounts through Stripe
+    - Users table has stripeAccountId and stripeAccountStatus fields
+    - Checkout uses destination charges: total charge = listing price + $4.00 fee
+    - application_fee_amount = $4.00 (kept by platform), remainder goes to host
+    - Hosts can create listings without onboarding, but bookings are blocked until active
+    - Routes: GET /api/stripe/connect/status, POST /api/stripe/connect/create-account, GET /api/stripe/connect/verify

@@ -108,6 +108,121 @@ export async function registerRoutes(
     }
   });
 
+  // === Stripe Connect Routes ===
+
+  app.get('/api/stripe/connect/status', async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const userId = (req.user as any).claims.sub;
+      const user = await storage.getUser(userId);
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      res.json({
+        stripeAccountId: user.stripeAccountId,
+        stripeAccountStatus: user.stripeAccountStatus || "not_started",
+      });
+    } catch (error: any) {
+      console.error('Connect status error:', error);
+      res.status(500).json({ message: 'Failed to get connect status' });
+    }
+  });
+
+  app.post('/api/stripe/connect/create-account', async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const userId = (req.user as any).claims.sub;
+      const user = await storage.getUser(userId);
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      if (user.stripeAccountId && user.stripeAccountStatus === 'active') {
+        return res.json({ alreadyActive: true });
+      }
+
+      const stripe = await getUncachableStripeClient();
+
+      let accountId = user.stripeAccountId;
+
+      if (!accountId) {
+        const account = await stripe.accounts.create({
+          type: 'express',
+          email: user.email || undefined,
+          capabilities: {
+            card_payments: { requested: true },
+            transfers: { requested: true },
+          },
+          metadata: {
+            parkneighbor_user_id: userId,
+          },
+        });
+        accountId = account.id;
+        await storage.updateStripeAccount(userId, accountId, 'pending');
+      }
+
+      const baseUrl = `https://${process.env.REPLIT_DOMAINS?.split(',')[0]}`;
+
+      const accountLink = await stripe.accountLinks.create({
+        account: accountId,
+        refresh_url: `${baseUrl}/host/onboarding?refresh=true`,
+        return_url: `${baseUrl}/host/onboarding/complete`,
+        type: 'account_onboarding',
+      });
+
+      res.json({ url: accountLink.url });
+    } catch (error: any) {
+      console.error('Connect create account error:', error);
+      res.status(500).json({ message: 'Failed to create connected account' });
+    }
+  });
+
+  app.get('/api/stripe/connect/verify', async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const userId = (req.user as any).claims.sub;
+      const user = await storage.getUser(userId);
+
+      if (!user || !user.stripeAccountId) {
+        return res.json({ status: 'not_started' });
+      }
+
+      const stripe = await getUncachableStripeClient();
+      const account = await stripe.accounts.retrieve(user.stripeAccountId);
+
+      let status = 'pending';
+      if (account.charges_enabled && account.payouts_enabled) {
+        status = 'active';
+      } else if (account.details_submitted) {
+        status = 'pending_verification';
+      }
+
+      await storage.updateStripeAccountStatus(userId, status);
+
+      res.json({
+        status,
+        chargesEnabled: account.charges_enabled,
+        payoutsEnabled: account.payouts_enabled,
+        detailsSubmitted: account.details_submitted,
+      });
+    } catch (error: any) {
+      console.error('Connect verify error:', error);
+      res.status(500).json({ message: 'Failed to verify account' });
+    }
+  });
+
   // === Stripe Payment Routes ===
   
   app.get('/api/stripe/publishable-key', async (req, res) => {
@@ -137,10 +252,24 @@ export async function registerRoutes(
         return res.status(404).json({ message: "Listing not found" });
       }
 
-      const userId = (req.user as any).claims.sub;
-      const TRANSACTION_FEE = 400;
+      const host = await storage.getUser(listing.userId);
+      if (!host || !host.stripeAccountId) {
+        return res.status(400).json({ message: "This host hasn't set up payouts yet. Please try another listing." });
+      }
 
       const stripe = await getUncachableStripeClient();
+
+      if (host.stripeAccountStatus !== 'active') {
+        const account = await stripe.accounts.retrieve(host.stripeAccountId);
+        if (account.charges_enabled && account.payouts_enabled) {
+          await storage.updateStripeAccountStatus(host.id, 'active');
+        } else {
+          return res.status(400).json({ message: "This host hasn't finished setting up payouts yet. Please try another listing." });
+        }
+      }
+
+      const userId = (req.user as any).claims.sub;
+      const TRANSACTION_FEE = 400;
 
       const baseUrl = `https://${process.env.REPLIT_DOMAINS?.split(',')[0]}`;
       
@@ -154,23 +283,18 @@ export async function registerRoutes(
                 name: listing.title,
                 description: `Parking at ${listing.address}`,
               },
-              unit_amount: listing.price,
-            },
-            quantity: 1,
-          },
-          {
-            price_data: {
-              currency: 'usd',
-              product_data: {
-                name: 'ParkNeighbor Transaction Fee',
-                description: 'Service fee for booking',
-              },
-              unit_amount: TRANSACTION_FEE,
+              unit_amount: listing.price + TRANSACTION_FEE,
             },
             quantity: 1,
           },
         ],
         mode: 'payment',
+        payment_intent_data: {
+          application_fee_amount: TRANSACTION_FEE,
+          transfer_data: {
+            destination: host.stripeAccountId,
+          },
+        },
         success_url: `${baseUrl}/booking/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${baseUrl}/browse`,
         metadata: {
